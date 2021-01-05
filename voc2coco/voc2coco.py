@@ -58,7 +58,7 @@ def convert(xml_dir, xml_basenames, json_file):
        # print(line)
         print("Processing %s"%(line))
         xml_f = os.path.join(xml_dir, line)
-        print(xml_f)
+        # print(xml_f)
         tree = ET.parse(xml_f)
         root = tree.getroot()
         path = get(root, 'path')
@@ -74,7 +74,7 @@ def convert(xml_dir, xml_basenames, json_file):
         width = int(get_and_check(size, 'width', 1).text)
         height = int(get_and_check(size, 'height', 1).text)
         image = {'file_name': filename, 'height': height, 'width': width,
-                 'id': str(image_id)}
+                 'id': int(image_id)}
         json_dict['images'].append(image)
         ## Cruuently we do not support segmentation
         #  segmented = get_and_check(root, 'segmented', 1).text
@@ -103,17 +103,17 @@ def convert(xml_dir, xml_basenames, json_file):
             bnd_id = bnd_id + 1
             """
             keypoints = get_and_check(obj, 'keypoints', 1)
-            x1 = int(get_and_check(keypoints, 'x1', 1).text) 
-            y1 = int(get_and_check(keypoints, 'y1', 1).text)
+            x1 = float(get_and_check(keypoints, 'x1', 1).text) 
+            y1 = float(get_and_check(keypoints, 'y1', 1).text)
             x1f = float(get_and_check(keypoints, 'x1f', 1).text)
-            x2 = int(get_and_check(keypoints, 'x2', 1).text)
-            y2 = int(get_and_check(keypoints, 'y2', 1).text)
+            x2 = float(get_and_check(keypoints, 'x2', 1).text)
+            y2 = float(get_and_check(keypoints, 'y2', 1).text)
             x2f = float(get_and_check(keypoints, 'x2f', 1).text)
-            x3 = int(get_and_check(keypoints, 'x3', 1).text)
-            y3 = int(get_and_check(keypoints, 'y3', 1).text)
+            x3 = float(get_and_check(keypoints, 'x3', 1).text)
+            y3 = float(get_and_check(keypoints, 'y3', 1).text)
             x3f = float(get_and_check(keypoints, 'x3f', 1).text)
-            x4 = int(get_and_check(keypoints, 'x4', 1).text) 
-            y4 = int(get_and_check(keypoints, 'y4', 1).text)
+            x4 = float(get_and_check(keypoints, 'x4', 1).text) 
+            y4 = float(get_and_check(keypoints, 'y4', 1).text)
             x4f = float(get_and_check(keypoints, 'x4f', 1).text)
 
             xmin = min(x1, x2, x3, x4)
@@ -124,7 +124,7 @@ def convert(xml_dir, xml_basenames, json_file):
             o_height = abs(ymax - ymin)
 
             ann = {'area': o_width*o_height, 'iscrowd': 0, 'image_id':
-                   str(image_id), 'bbox':[xmin, ymin, o_width, o_height],
+                   int(image_id), 'bbox':[xmin, ymin, o_width, o_height],
                    'keypoints':[x1,y1,x1f, x2,y2,x2f, x3,y3,x3f, x4,y4,x4f],
                    'category_id': category_id, 'id': bnd_id, 'ignore': 0,
                    'num_keypoints': 4}
@@ -141,7 +141,7 @@ def convert(xml_dir, xml_basenames, json_file):
 
 if __name__ == '__main__':
 
-    xml_dir = "/workspace/zigangzhao/Pose_IDCard/scripts/all_data_0105/xml_test/"
+    xml_dir = "/workspace/zigangzhao/Pose_IDCard/scripts/all_data_0105/xml_train/"
     xml_list = glob.glob(xml_dir + '/*.xml')
 
     xml_basenames = []
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     json_path = 'json'
     if not os.path.exists(json_path):
         os.makedirs(json_path)
-    json_file = "json/test.json"
+    json_file = "json/train.json"
     convert(xml_dir, xml_basenames, json_file)
 
     print("finished!")
