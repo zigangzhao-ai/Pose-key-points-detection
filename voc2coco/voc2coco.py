@@ -1,7 +1,9 @@
+'''
+code by zzg@2020/01/05
+'''
 #!/usr/bin/python
 
 # pip install lxml
-
 import sys
 import os
 import json
@@ -19,11 +21,9 @@ PRE_DEFINE_CATEGORIES = {}
                          #  "motorbike": 14, "person": 15, "pottedplant": 16,
                          #  "sheep": 17, "sofa": 18, "train": 19, "tvmonitor": 20}
 
-
 def get(root, name):
     vars = root.findall(name)
     return vars
-
 
 def get_and_check(root, name, length):
     vars = root.findall(name)
@@ -43,23 +43,9 @@ def get_filename_as_int(filename):
     except:
         raise NotImplementedError('Filename %s is supposed to be an integer.'%(filename))
 
-xml_dir = "/workspace1/zigangzhao/test/txt_to_xml/finished01/"
-xml_list = glob.glob(xml_dir + '/*.xml')
-#print(xml_list)
-xml_basenames = []
-for item in xml_list:
-    xml_basenames.append(os.path.basename(item))
-    #print(xml_basenames)
-#print(len(xml_basenames))   
-f = open('xml_list.txt','w')
-for xml in xml_basenames:
-    f.write('\n'+xml)
-    
-
 
 #pdb.set_trace()
-
-def convert(xml_dir, json_file):
+def convert(xml_dir, xml_basenames, json_file):
     #list_fp = open(xml_list, 'r')
     list_fp = xml_basenames
     #print(list_fp)
@@ -88,7 +74,7 @@ def convert(xml_dir, json_file):
         width = int(get_and_check(size, 'width', 1).text)
         height = int(get_and_check(size, 'height', 1).text)
         image = {'file_name': filename, 'height': height, 'width': width,
-                 'id':int(image_id)}
+                 'id': str(image_id)}
         json_dict['images'].append(image)
         ## Cruuently we do not support segmentation
         #  segmented = get_and_check(root, 'segmented', 1).text
@@ -117,26 +103,29 @@ def convert(xml_dir, json_file):
             bnd_id = bnd_id + 1
             """
             keypoints = get_and_check(obj, 'keypoints', 1)
-            x1 = float(get_and_check(keypoints, 'x1', 1).text) 
-            y1 = float(get_and_check(keypoints, 'y1', 1).text)
+            x1 = int(get_and_check(keypoints, 'x1', 1).text) 
+            y1 = int(get_and_check(keypoints, 'y1', 1).text)
             x1f = float(get_and_check(keypoints, 'x1f', 1).text)
-            x2 = float(get_and_check(keypoints, 'x2', 1).text)
-            y2 = float(get_and_check(keypoints, 'y2', 1).text)
+            x2 = int(get_and_check(keypoints, 'x2', 1).text)
+            y2 = int(get_and_check(keypoints, 'y2', 1).text)
             x2f = float(get_and_check(keypoints, 'x2f', 1).text)
-            x3 = float(get_and_check(keypoints, 'x3', 1).text)
-            y3 = float(get_and_check(keypoints, 'y3', 1).text)
+            x3 = int(get_and_check(keypoints, 'x3', 1).text)
+            y3 = int(get_and_check(keypoints, 'y3', 1).text)
             x3f = float(get_and_check(keypoints, 'x3f', 1).text)
-            x4 = float(get_and_check(keypoints, 'x4', 1).text) 
-            y4 = float(get_and_check(keypoints, 'y4', 1).text)
+            x4 = int(get_and_check(keypoints, 'x4', 1).text) 
+            y4 = int(get_and_check(keypoints, 'y4', 1).text)
             x4f = float(get_and_check(keypoints, 'x4f', 1).text)
-           
-            #assert(x1> x3)
-            #assert(y1> y3)
-            o_width = round(abs(x1 - x3),3)
-            o_height = round(abs(y1 - y3),3)
+
+            xmin = min(x1, x2, x3, x4)
+            ymin = min(y1, y2, y3, y4)
+            xmax = max(x1, x2, x3, x4)
+            ymax = max(y1, y2, y3, y4)
+            o_width = abs(xmax - xmin)
+            o_height = abs(ymax - ymin)
+
             ann = {'area': o_width*o_height, 'iscrowd': 0, 'image_id':
-                   int(image_id), 'bbox':[x3, y3, o_width, o_height],
-                   'keypoints':[x1, y1 ,x1f, x2, y2, x2f, x3, y3, x3f, x4, y4, x4f],
+                   str(image_id), 'bbox':[xmin, ymin, o_width, o_height],
+                   'keypoints':[x1,y1,x1f, x2,y2,x2f, x3,y3,x3f, x4,y4,x4f],
                    'category_id': category_id, 'id': bnd_id, 'ignore': 0,
                    'num_keypoints': 4}
             json_dict['annotations'].append(ann)
@@ -145,18 +134,29 @@ def convert(xml_dir, json_file):
         cat = {'supercategory': 'none', 'id': cid, 'name': cate}
         json_dict['categories'].append(cat)
     json_fp = open(json_file, 'w')
-    json_str = json.dumps(json_dict,indent = 1)
+    json_str = json.dumps(json_dict, indent = 1)
     json_fp.write(json_str)
     json_fp.close()
-    #list_fp.close()
 
 
 if __name__ == '__main__':
-    if len(sys.argv) <= 1:
-        print('3 auguments are need.')
-        print('Usage: %s XML_LIST.txt XML_DIR OUTPU_JSON.json'%(sys.argv[0]))
-        exit(1)
 
-    convert(sys.argv[1], sys.argv[2])
-    #convert(xml_list,xml_dir,json_file)
+    xml_dir = "/workspace/zigangzhao/Pose_IDCard/scripts/all_data_0105/xml_test/"
+    xml_list = glob.glob(xml_dir + '/*.xml')
+
+    xml_basenames = []
+    for item in xml_list:
+        xml_basenames.append(os.path.basename(item))
+
+    # f = open('xml_list.txt','w')
+    # for xml in xml_basenames:
+    #     f.write('\n'+xml)
+    json_path = 'json'
+    if not os.path.exists(json_path):
+        os.makedirs(json_path)
+    json_file = "json/test.json"
+    convert(xml_dir, xml_basenames, json_file)
+
     print("finished!")
+
+
